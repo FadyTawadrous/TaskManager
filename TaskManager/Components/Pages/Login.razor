@@ -40,6 +40,10 @@
                         <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
                             @(isSubmitting ? "Logging in..." : "Login")
                         </button>
+
+                        <div class="text-center mt-3">
+                            <a class="btn btn-outline-secondary" href="/register">Sign up</a>
+                        </div>
                     </EditForm>
                 </div>
             </div>
@@ -53,20 +57,17 @@
     private bool isSubmitting = false;
     private async Task HandleLogin()
     {
-        Console.WriteLine("Entered metheod");
         isSubmitting = true;
         try
         {
             var user = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
             if (user == null)
             {
-                Console.WriteLine("User is null");
                 ErrorMessage = "Invalid email or password.";
                 StateHasChanged();
                 return;
             }
 
-            Console.WriteLine("User found");
             await LocalStorage.SetItemAsync("userId", user.AppUserId);
             ErrorMessage = null;
             NavManager.NavigateTo("/dashboard");

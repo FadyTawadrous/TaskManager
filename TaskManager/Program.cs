@@ -7,11 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Register Database Context Service
 builder.Services.AddDbContext<AppDbContext>(options =>
     options
     .UseLazyLoadingProxies()
     .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
     );
+
+// Register Authentication Service
+builder.Services.AddScoped<AuthenticationService>();
 
 var app = builder.Build();
 

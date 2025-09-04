@@ -1,19 +1,45 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 public class AuthenticationService
 {
-    public static void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)
-    {
-        using var hmac = new HMACSHA512();
-        salt = hmac.Key;
-        hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-    }
+    private readonly AppDbContext _context;
 
-    public static bool VerifyPassword(string password, byte[] storedHash, byte[] storedSalt)
+    public AuthenticationService(AppDbContext context)
     {
-        using var hmac = new HMACSHA512(storedSalt);
+        _context = context;
+    }
+    public async Task<AppUser?> LoginAsync(string email, string password)
+    {
+        var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Email.ToLowerInvariant() == email.ToLowerInvariant());
+        if (user == null) return null;
+
+        using var hmac = new HMACSHA512(user.PasswordSalt);
         var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return computedHash.SequenceEqual(storedHash);
+
+        if (!computedHash.SequenceEqual(user.PasswordHash))
+            return null;
+
+        return user;
+    }
+    public async Task<bool> RegisterAsync(string name, string email, string password)
+    {
+        if (await _context.AppUsers.AnyAsync(u => u.Email.ToLowerInvariant() == email.ToLowerInvariant()))
+            return false;
+
+        using var hmac = new HMACSHA512();
+        var newUser = new AppUser
+        {
+            Name = name,
+            Email = email.ToLowerInvariant(),
+            PasswordSalt = hmac.Key,
+            PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password))
+        };
+
+        _context.AppUsers.Add(newUser);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }

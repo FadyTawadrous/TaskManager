@@ -13,7 +13,7 @@ public class AuthenticationService
     }
     public async Task<AppUser?> LoginAsync(string email, string password)
     {
-        var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Email.ToLowerInvariant() == email.ToLowerInvariant());
+        var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
         if (user == null) return null;
 
         using var hmac = new HMACSHA512(user.PasswordSalt);
@@ -26,14 +26,14 @@ public class AuthenticationService
     }
     public async Task<bool> RegisterAsync(string name, string email, string password)
     {
-        if (await _context.AppUsers.AnyAsync(u => u.Email.ToLowerInvariant() == email.ToLowerInvariant()))
+        if (await _context.AppUsers.AnyAsync(u => u.Email.ToLower() == email.ToLower()))
             return false;
 
         using var hmac = new HMACSHA512();
         var newUser = new AppUser
         {
             Name = name,
-            Email = email.ToLowerInvariant(),
+            Email = email.ToLower(),
             PasswordSalt = hmac.Key,
             PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password))
         };

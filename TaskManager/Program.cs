@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManager.Components;
+using Blazored.SessionStorage;
+using Blazored.LocalStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Register Authentication Service
 builder.Services.AddScoped<AuthenticationService>();
 
+// Register Srorage Services
+builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddBlazoredSessionStorage();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -27,7 +33,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 
 app.UseAntiforgery();

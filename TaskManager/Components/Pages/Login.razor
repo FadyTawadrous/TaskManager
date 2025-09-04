@@ -7,27 +7,45 @@
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 
-<h3>Login</h3>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Welcome, Login or Sign up</h3>
 
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <div class="alert alert-danger">@ErrorMessage</div>
-}
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@ErrorMessage</div>
+                    }
 
-<EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
-    <DataAnnotationsValidator />
+                    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-    <InputText @bind-Value="loginModel.Email" placeholder="Email" class="form-control" id="email" name="email" />
-    <ValidationMessage For="@(() => loginModel.Email)" />
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText @bind-Value="loginModel.Email" class="form-control" id="email" name="email"
+                                placeholder="Enter your email" autofocus />
+                            <ValidationMessage For="@(() => loginModel.Email)" />
+                        </div>
 
-    <InputText @bind-Value="loginModel.Password" placeholder="Password" type="password" class="form-control"
-        id="password" name="password" />
-    <ValidationMessage For="@(() => loginModel.Password)" />
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText @bind-Value="loginModel.Password" class="form-control" id="password"
+                                name="password" type="password" placeholder="Enter your password" />
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
 
-    <button type="submit" class="btn btn-primary mt-2" disabled="@isSubmitting">
-        @(isSubmitting ? "Logging in..." : "Login")
-    </button>
-</EditForm>
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
+                            @(isSubmitting ? "Logging in..." : "Login")
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     private LoginModel loginModel = new LoginModel();

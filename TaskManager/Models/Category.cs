@@ -6,9 +6,9 @@ public class Category
 {
     [Key]
     public int CategoryId { get; set; }
-    
+
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public virtual ICollection<TaskItem> TaskItems { get; set; } = new List<TaskItem>();
 }

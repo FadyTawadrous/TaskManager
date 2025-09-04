@@ -13,5 +13,5 @@ public class AppUser
     public byte[] PasswordSalt { get; set; }
 
     // One-to-many relationship with TaskItem
-    public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public virtual ICollection<TaskItem> TaskItems { get; set; } = new List<TaskItem>();
 }

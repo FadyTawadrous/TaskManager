@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TaskManager.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +6,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options
+    .UseLazyLoadingProxies()
+    .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    );
 
 var app = builder.Build();
 

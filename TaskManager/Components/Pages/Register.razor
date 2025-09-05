@@ -89,7 +89,7 @@
                 StateHasChanged();
                 await Task.Delay(3000); // optional pause
                 SuccessMessage = null;
-                NavManager.NavigateTo("/login");
+                NavManager.NavigateTo("/");
                 return;
             }
             ErrorMessage = "Email already exists";

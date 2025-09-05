@@ -56,6 +56,10 @@
     private LoginModel loginModel = new LoginModel();
     private string? ErrorMessage;
     private bool isSubmitting = false;
+    protected override void OnInitialized()
+    {
+        UserIdService.loggedUserId = 0;
+    }
     private async Task HandleLogin()
     {
         isSubmitting = true;

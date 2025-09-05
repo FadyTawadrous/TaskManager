@@ -6,66 +6,90 @@
 @inject userIdService UserIdService
 @inject AppDbContext appDbContext
 
-<h3 class="mb-4">📝 Create New Task</h3>
 @if (!string.IsNullOrEmpty(SuccessMessage))
 {
-    <div class="alert alert-success">@SuccessMessage</div>
+    <div class="text-center my-3">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
-<EditForm Model="@newTask" OnValidSubmit="HandleValidSubmit" FormName="CreateTaskForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-
-    <div class="mb-3">
-        <label class="form-label">Title</label>
-        <InputText class="form-control" @bind-Value="newTask.Title" />
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">📝 Create New Task</h4>
     </div>
+    <div class="card-body">
+        @* Your form goes here *@
+        <EditForm Model="@newTask" OnValidSubmit="HandleValidSubmit" FormName="CreateTaskForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-    <div class="mb-3">
-        <label class="form-label">Description</label>
-        <InputTextArea class="form-control" @bind-Value="newTask.Description" />
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-pencil"></i></span>
+                    <InputText class="form-control" @bind-Value="newTask.Title" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <InputTextArea class="form-control" @bind-Value="newTask.Description" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Category</label>
+                <InputSelect class="form-select" @bind-Value="selectedCategoryId">
+                    <option selected value="">-- Select Category --</option>
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.CategoryId">@cat.Name</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Due Date</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                    <InputDate class="form-control" @bind-Value="newTask.DueDate"
+                        min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Task Status</label>
+                <InputSelect class="form-select" @bind-Value="newTask.TaskStatus">
+                    <option selected value="">-- Select Task Status --</option>
+                    @foreach (var status in Enum.GetValues<TaskStatus>())
+                    {
+                        <option value="@status">@status</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Task Priority Level</label>
+                <InputSelect class="form-select" @bind-Value="newTask.PriorityLevel">
+                    <option selected value="">-- Select Task Priority Level --</option>
+                    @foreach (var priority in Enum.GetValues<PriorityLevel>())
+                    {
+                        <option value="@priority">@priority</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="d-flex justify-content-around mt-4">
+                <button type="submit" class="btn btn-success me-2"
+                    disabled="@(!string.IsNullOrWhiteSpace(SuccessMessage))">
+                    @(string.IsNullOrWhiteSpace(SuccessMessage) ? "✅ Create Task" : "⏳ Processing...")
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
     </div>
+</div>
 
-    <div class="mb-3">
-        <label class="form-label">Category</label>
-        <InputSelect class="form-select" @bind-Value="selectedCategoryId">
-            <option value="">-- Select Category --</option>
-            @foreach (var cat in categories)
-            {
-                <option value="@cat.CategoryId">@cat.Name</option>
-            }
-        </InputSelect>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Due Date</label>
-        <InputDate class="form-control" @bind-Value="newTask.DueDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Status</label>
-        <InputSelect class="form-select" @bind-Value="newTask.TaskStatus">
-            @foreach (var status in Enum.GetValues<TaskStatus>())
-            {
-                <option value="@status">@status</option>
-            }
-        </InputSelect>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Priority</label>
-        <InputSelect class="form-select" @bind-Value="newTask.PriorityLevel">
-            @foreach (var priority in Enum.GetValues<PriorityLevel>())
-            {
-                <option value="@priority">@priority</option>
-            }
-        </InputSelect>
-    </div>
-
-    <button type="submit" class="btn btn-success me-2" disabled="@(!string.IsNullOrWhiteSpace(SuccessMessage))">
-        @(string.IsNullOrWhiteSpace(SuccessMessage) ? "Create Task" : "Processing...")
-    </button>
-    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
-</EditForm>
 
 @code {
     private TaskItem newTask = new();
@@ -75,7 +99,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        categories = await appDbContext.Categories.ToListAsync<Category>();
+        categories = await appDbContext.Categories.OrderBy(c => c.Name).ToListAsync<Category>();
         newTask.DueDate = DateTime.Today;
     }
     private async Task HandleValidSubmit()
@@ -88,7 +112,6 @@
         await Task.Delay(3000);
         NavManager.NavigateTo("/dashboard");
     }
-
     private void Cancel()
     {
         NavManager.NavigateTo("/dashboard");

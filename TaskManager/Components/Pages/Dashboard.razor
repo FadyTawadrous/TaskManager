@@ -1,9 +1,8 @@
 @page "/dashboard"
-@using Blazored.LocalStorage;
-@inject AuthenticationService AuthenticationService
+
+@rendermode InteractiveServer
 @inject NavigationManager NavManager
 @inject TaskService TaskService
-@inject ILocalStorageService LocalStorage
 @inject userIdService UserIdService
 
 <h3 class="mb-4">📋 Task Dashboard</h3>

@@ -1,4 +1,4 @@
-@page "/login"
+@page "/"
 @using Blazored.LocalStorage;
 @using System.ComponentModel.DataAnnotations;
 
@@ -6,6 +6,7 @@
 @inject AuthenticationService AuthService
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
+@inject userIdService UserIdService
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -70,6 +71,7 @@
 
             await LocalStorage.SetItemAsync("userId", user.AppUserId);
             ErrorMessage = null;
+            UserIdService.loggedUserId = user.AppUserId;
             NavManager.NavigateTo("/dashboard");
         }
         catch (Exception ex)

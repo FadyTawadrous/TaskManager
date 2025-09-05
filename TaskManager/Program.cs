@@ -23,6 +23,10 @@ builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddBlazoredSessionStorage();
 
+builder.Services.AddScoped<TaskService>();
+
+builder.Services.AddSingleton<userIdService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

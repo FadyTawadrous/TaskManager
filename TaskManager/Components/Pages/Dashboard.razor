@@ -1,0 +1,100 @@
+@page "/dashboard"
+@using Blazored.LocalStorage;
+@inject AuthenticationService AuthenticationService
+@inject NavigationManager NavManager
+@inject TaskService TaskService
+@inject ILocalStorageService LocalStorage
+@inject userIdService UserIdService
+
+<h3 class="mb-4">📋 Task Dashboard</h3>
+
+@if (tasks is null)
+{
+    <p>Loading tasks...</p>
+}
+else if (!tasks.Any())
+{
+    <p>No tasks found. Start by creating one!</p>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var mytask in tasks)
+            {
+                <tr>
+                    <td>@mytask.Title</td>
+                    <td>@mytask.Description</td>
+                    <td>@mytask.Category.Name</td>
+                    <td>@mytask.DueDate.ToShortDateString()</td>
+                    <td>
+                        <span class="@GetStatusClass((int)mytask.TaskStatus)">
+                            @mytask.TaskStatus
+                        </span>
+                    </td>
+                    <td>@mytask.PriorityLevel</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TaskItem> tasks;
+    private int loggedUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedUserId = UserIdService.loggedUserId;
+        // Console.WriteLine($"Retrieved userId: {loggedUserId}");
+        try
+        {
+            tasks = await TaskService.GetAllAsync(loggedUserId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            tasks = new List<TaskItem>();
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+    private async Task DeleteTask(int id)
+    {
+        Console.WriteLine("Delete button");
+        await TaskService.DeleteAsync(id);
+        tasks = await TaskService.GetAllAsync(loggedUserId); // Refresh list
+        StateHasChanged();
+    }
+
+    private void EditTask(int id)
+    {
+        // Navigate to edit page (if implemented)
+        // NavManager.NavigateTo($"/tasks/edit/{id}");
+    }
+
+    private string GetStatusClass(int status) => status switch
+    {
+        0 => "badge bg-secondary",
+        1 => "badge bg-warning text-dark",
+        2 => "badge bg-success",
+        _ => "badge bg-light"
+    };
+}

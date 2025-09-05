@@ -12,7 +12,7 @@ public class TaskItem
     public DateTime? UpdatedAt { get; set; }
     public TaskStatus TaskStatus { get; set; } = TaskStatus.Pending;
     public PriorityLevel PriorityLevel { get; set; } = PriorityLevel.Medium;
-    public bool IsOverdue => DueDate < DateTime.UtcNow;
+    public bool IsOverdue => DueDate < DateTime.UtcNow && TaskStatus != TaskStatus.Completed;
 
 
     // Many-to-1 relationship with AppUser

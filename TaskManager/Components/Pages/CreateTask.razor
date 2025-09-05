@@ -60,7 +60,7 @@
             <div class="mb-3">
                 <label class="form-label">Task Status</label>
                 <InputSelect class="form-select" @bind-Value="newTask.TaskStatus">
-                    <option selected value="">-- Select Task Status --</option>
+                    <option selected disabled value="">-- Select Task Status --</option>
                     @foreach (var status in Enum.GetValues<TaskStatus>())
                     {
                         <option value="@status">@status</option>
@@ -71,7 +71,7 @@
             <div class="mb-3">
                 <label class="form-label">Task Priority Level</label>
                 <InputSelect class="form-select" @bind-Value="newTask.PriorityLevel">
-                    <option selected value="">-- Select Task Priority Level --</option>
+                    <option selected disabled value="">-- Select Task Priority Level --</option>
                     @foreach (var priority in Enum.GetValues<PriorityLevel>())
                     {
                         <option value="@priority">@priority</option>

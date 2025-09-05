@@ -10,9 +10,14 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h3>📋 Task Dashboard</h3>
-    <button class="btn btn-outline-secondary" @onclick="Logout">
-        <i class="bi bi-box-arrow-right"></i> Logout
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" @onclick="NavigateToCreate">
+            <i class="bi bi-plus-circle"></i> Create Task
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="Logout">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+    </div>
 </div>
 
 @if (loggedUserId <= 0)
@@ -42,6 +47,7 @@ else
                     <th>Description</th>
                     <th>Category</th>
                     <th>Due Date</th>
+                    <th>Is Overdue</th>
                     <th>Status</th>
                     <th>Priority</th>
                     <th>Actions</th>
@@ -55,6 +61,16 @@ else
                         <td>@mytask.Description</td>
                         <td>@mytask.Category.Name</td>
                         <td>@mytask.DueDate.ToShortDateString()</td>
+                        <td>
+                            @if (mytask.IsOverdue)
+                            {
+                                <span class="badge bg-danger" title="Due date has passed and task is not completed">Overdue</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">On Time</span>
+                            }
+                        </td>
                         <td>
                             <span class="@GetStatusClass((int)mytask.TaskStatus)">
                                 @mytask.TaskStatus
@@ -117,6 +133,10 @@ else
     {
         UserIdService.loggedUserId = 0;
         NavManager.NavigateTo("/");
+    }
+    private void NavigateToCreate()
+    {
+        NavManager.NavigateTo("/create");
     }
     private async Task DeleteTask(int id)
     {

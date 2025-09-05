@@ -1,0 +1,165 @@
+@page "/edit/{id:int}"
+@using Microsoft.EntityFrameworkCore
+
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+@inject TaskService TaskService
+@inject userIdService UserIdService
+@inject AppDbContext appDbContext
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="text-center my-3">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0">✏️ Edit Task</h3>
+    </div>
+    <div class="card-body">
+        @* Your form goes here *@
+        @if (taskToEdit is null)
+        {
+            <div class="alert alert-warning">Task not found or inaccessible.</div>
+        }
+        else
+        {
+            <EditForm Model="@taskToEdit" OnValidSubmit="HandleValidSubmit" FormName="UpdatingTaskForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-pencil"></i></span>
+                        <InputText class="form-control" @bind-Value="taskToEdit.Title" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <InputTextArea class="form-control" @bind-Value="taskToEdit.Description" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Category</label>
+                    <InputSelect class="form-select" @bind-Value="selectedCategoryId">
+                        <option value="">-- Select Category --</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.CategoryId">@cat.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Due Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                        <InputDate class="form-control" @bind-Value="taskToEdit.DueDate" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Task Status</label>
+                    <InputSelect class="form-select" @bind-Value="taskToEdit.TaskStatus">
+                        @foreach (var status in Enum.GetValues<TaskStatus>())
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </InputSelect>
+                    @if (taskToEdit.TaskStatus != null)
+                    {
+                        <div class="mt-2">
+                            <span class="@GetStatusClass((int)taskToEdit.TaskStatus)">
+                                @taskToEdit.TaskStatus
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Task Priority Level</label>
+                    <InputSelect class="form-select" @bind-Value="taskToEdit.PriorityLevel">
+                        @foreach (var priority in Enum.GetValues<PriorityLevel>())
+                        {
+                            <option value="@priority">@priority</option>
+                        }
+                    </InputSelect>
+                    @if (taskToEdit.PriorityLevel != null)
+                    {
+                        <div class="mt-2">
+                            <span class="@GetPriorityClass((int)taskToEdit.PriorityLevel)">
+                                @taskToEdit.PriorityLevel
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-around mt-4">
+                    <button type="submit" class="btn btn-primary" disabled="@(!string.IsNullOrWhiteSpace(SuccessMessage))">
+                        @(string.IsNullOrWhiteSpace(SuccessMessage) ? "💾 Save Changes" : "⏳ Processing...")
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private TaskItem? taskToEdit;
+    private List<Category> categories = new();
+    private int selectedCategoryId;
+    private string? SuccessMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        taskToEdit = await TaskService.GetTaskByIdAsync(id);
+        if (taskToEdit is not null)
+        {
+            selectedCategoryId = taskToEdit.Category?.CategoryId ?? 0;
+            categories = await appDbContext.Categories.OrderBy(c => c.Name).ToListAsync();
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        taskToEdit.Category = categories.FirstOrDefault(c => c.CategoryId == selectedCategoryId);
+        taskToEdit.UpdatedAt = DateTime.Now;
+        await TaskService.UpdateAsync(taskToEdit);
+        SuccessMessage = "Task Updated Successfully!. Redirecting in 3 seconds";
+        StateHasChanged();
+        await Task.Delay(3000);
+        NavManager.NavigateTo("/dashboard");
+    }
+
+    private void Cancel()
+    {
+        NavManager.NavigateTo("/dashboard");
+    }
+    public enum PriorityLevel { Low = 0, Medium = 1, High = 2 }
+    public enum TaskStatus { Pending = 0, InProgress = 1, Completed = 2 }
+
+    private string GetStatusClass(int status) => status switch
+    {
+        0 => "badge bg-secondary",
+        1 => "badge bg-warning text-dark",
+        2 => "badge bg-success",
+        _ => "badge bg-light"
+    };
+    private string GetPriorityClass(int priority) => priority switch
+    {
+        // 0 = Low, 1 = Medium, 2 = High (adjust as your enum or values dictate)
+        0 => "badge bg-success", // low = green
+        1 => "badge bg-warning text-dark", // medium = yellow
+        2 => "badge bg-danger", // high = red
+        _ => "badge bg-secondary" // fallback
+    };
+}

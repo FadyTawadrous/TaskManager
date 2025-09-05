@@ -16,7 +16,7 @@
 }
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">📝 Create New Task</h4>
+        <h3 class="mb-0">📝 Create New Task</h3>
     </div>
     <div class="card-body">
         @* Your form goes here *@
@@ -66,6 +66,14 @@
                         <option value="@status">@status</option>
                     }
                 </InputSelect>
+                @if (newTask.TaskStatus != null)
+                {
+                    <div class="mt-2">
+                        <span class="@GetStatusClass((int)newTask.TaskStatus)">
+                            @newTask.TaskStatus
+                        </span>
+                    </div>
+                }
             </div>
 
             <div class="mb-3">
@@ -77,6 +85,14 @@
                         <option value="@priority">@priority</option>
                     }
                 </InputSelect>
+                @if (newTask.PriorityLevel != null)
+                {
+                    <div class="mt-2">
+                        <span class="@GetPriorityClass((int)newTask.PriorityLevel)">
+                            @newTask.PriorityLevel
+                        </span>
+                    </div>
+                }
             </div>
 
             <div class="d-flex justify-content-around mt-4">
@@ -119,4 +135,20 @@
 
     public enum PriorityLevel { Low = 0, Medium = 1, High = 2 }
     public enum TaskStatus { Pending = 0, InProgress = 1, Completed = 2 }
+
+    private string GetStatusClass(int status) => status switch
+    {
+        0 => "badge bg-secondary",
+        1 => "badge bg-warning text-dark",
+        2 => "badge bg-success",
+        _ => "badge bg-light"
+    };
+    private string GetPriorityClass(int priority) => priority switch
+    {
+        // 0 = Low, 1 = Medium, 2 = High (adjust as your enum or values dictate)
+        0 => "badge bg-success", // low = green
+        1 => "badge bg-warning text-dark", // medium = yellow
+        2 => "badge bg-danger", // high = red
+        _ => "badge bg-secondary" // fallback
+    };
 }

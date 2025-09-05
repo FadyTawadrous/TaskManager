@@ -153,8 +153,7 @@ else
 
     private void EditTask(int id)
     {
-        // Navigate to edit page (if implemented)
-        // NavManager.NavigateTo($"/tasks/edit/{id}");
+        NavManager.NavigateTo($"/edit/{id}");
     }
 
     private string GetStatusClass(int status) => status switch

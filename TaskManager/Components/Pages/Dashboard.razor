@@ -9,7 +9,8 @@
 @inject AppDbContext appDbContext
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>📋 Task Dashboard</h3>
+    <h5>📋 Task Dashboard</h5>
+
     <div class="d-flex gap-2">
         <button class="btn btn-success" @onclick="NavigateToCreate">
             <i class="bi bi-plus-circle"></i> Create Task
@@ -17,6 +18,61 @@
         <button class="btn btn-outline-secondary" @onclick="Logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </button>
+    </div>
+</div>
+
+<div class="position-sticky top-0 bg-white z-1">
+    <div class="card mb-4 p-3 shadow-sm">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <InputText class="form-control" placeholder="🔎 Search by Title" @oninput="HandleSearchInput" @bind-Value="searchTerm" />
+            </div>
+
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="selectedCategoryId">
+                    <option value="">All Categories</option>
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.CategoryId">@cat.Name</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="filterOverdue">
+                    <option value="">All</option>
+                    <option value="True">Overdue</option>
+                    <option value="False">On Time</option>
+                </InputSelect>
+            </div>
+
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="selectedStatus">
+                    <option value="">All Statuses</option>
+                    @foreach (var s in Enum.GetValues<TaskStatus>())
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-2">
+                <InputSelect class="form-select" @bind-Value="selectedPriority">
+                    <option value="">All Priorities</option>
+                    @foreach (var p in Enum.GetValues<PriorityLevel>())
+                    {
+                        <option value="@p">@p</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-dark " @onclick="ResetFilters">
+                    <i class="bi bi-x-circle"></i> Reset Filters
+                </button>
+            </div>
+
+        </div>
     </div>
 </div>
 
@@ -54,9 +110,9 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var mytask in tasks)
+                @foreach (var mytask in FilteredTasks)
                 {
-                    <tr>
+                    <tr class="@(mytask.IsOverdue ? "table-danger" : "")">
                         <td>@mytask.Title</td>
                         <td>@mytask.Description</td>
                         <td>@mytask.Category.Name</td>
@@ -100,6 +156,14 @@ else
     private int loggedUserId;
     private AppUser? currentUser = new();
 
+    // filteration fields
+    private string searchTerm = "";
+    private PriorityLevel? selectedPriority;
+    private TaskStatus? selectedStatus;
+    private int? selectedCategoryId;
+    private string? filterOverdue = string.Empty;
+    private List<Category> categories = new();
+
     protected override async Task OnInitializedAsync()
     {
         loggedUserId = UserIdService.loggedUserId;
@@ -108,6 +172,7 @@ else
         {
             tasks = await TaskService.GetAllAsync(loggedUserId);
             currentUser = await appDbContext.AppUsers.FirstOrDefaultAsync(u => u.AppUserId == loggedUserId);
+            categories = await appDbContext.Categories.OrderBy(c => c.Name).ToListAsync();
         }
         catch (Exception ex)
         {
@@ -144,7 +209,6 @@ else
         var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this task?");
         if (confirmed)
         {
-
             await TaskService.DeleteAsync(id);
             tasks = await TaskService.GetAllAsync(loggedUserId); // Refresh list
             StateHasChanged();
@@ -155,6 +219,9 @@ else
     {
         NavManager.NavigateTo($"/edit/{id}");
     }
+
+    public enum PriorityLevel { Low = 0, Medium = 1, High = 2 }
+    public enum TaskStatus { Pending = 0, InProgress = 1, Completed = 2 }
 
     private string GetStatusClass(int status) => status switch
     {
@@ -172,4 +239,27 @@ else
         2 => "badge bg-danger", // high = red
         _ => "badge bg-secondary" // fallback
     };
+
+    private void HandleSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+    }
+
+    private IEnumerable<TaskItem> FilteredTasks => tasks?
+    .Where(t => string.IsNullOrWhiteSpace(searchTerm) || t.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+    .Where(t => !selectedPriority.HasValue || (int)t.PriorityLevel == (int)selectedPriority)
+    .Where(t => !selectedStatus.HasValue || (int)t.TaskStatus == (int)selectedStatus)
+    .Where(t => !selectedCategoryId.HasValue || t.Category.CategoryId == selectedCategoryId)
+    .Where(t => string.IsNullOrWhiteSpace(filterOverdue) || t.IsOverdue.ToString() == filterOverdue)
+    .OrderBy(t => t.DueDate)
+    ?? Enumerable.Empty<TaskItem>();
+
+    private void ResetFilters()
+    {
+        searchTerm = "";
+        selectedPriority = null;
+        selectedStatus = null;
+        selectedCategoryId = null;
+        filterOverdue = string.Empty;
+    }
 }

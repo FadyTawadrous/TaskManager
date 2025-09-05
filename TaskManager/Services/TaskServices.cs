@@ -11,6 +11,7 @@ public class TaskService
         return await _context.TaskItems
             .Where(t => t.AppUserId == userId)
             .Include(t => t.Category)
+            .OrderBy(t => t.DueDate)
             .ToListAsync();
     }
     public async Task<TaskItem?> GetTaskByIdAsync(int id) =>

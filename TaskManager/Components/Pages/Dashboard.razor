@@ -43,7 +43,12 @@ else
                             @mytask.TaskStatus
                         </span>
                     </td>
-                    <td>@mytask.PriorityLevel</td>
+                    <td>
+                        <span class="@GetPriorityClass(mytask.PriorityLevel)">
+                            @mytask.PriorityLevel
+                        </span>
+
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">Edit</button>
                         <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">Delete</button>
@@ -96,5 +101,14 @@ else
         1 => "badge bg-warning text-dark",
         2 => "badge bg-success",
         _ => "badge bg-light"
+    };
+
+    private string GetPriorityClass(int priority) => priority switch
+    {
+        // 0 = Low, 1 = Medium, 2 = High (adjust as your enum or values dictate)
+        0 => "badge bg-success", // low = green
+        1 => "badge bg-warning text-dark", // medium = yellow
+        2 => "badge bg-danger", // high = red
+        _ => "badge bg-secondary" // fallback
     };
 }

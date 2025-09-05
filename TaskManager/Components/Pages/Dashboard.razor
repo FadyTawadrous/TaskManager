@@ -1,26 +1,37 @@
 @page "/dashboard"
+@using Microsoft.EntityFrameworkCore
 
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 @inject TaskService TaskService
 @inject userIdService UserIdService
+@inject IJSRuntime JS
+@inject AppDbContext appDbContext
 
-<h3 class="mb-4">📋 Task Dashboard</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>📋 Task Dashboard</h3>
+    <button class="btn btn-outline-secondary" @onclick="Logout">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
+</div>
 
 @if (loggedUserId <= 0)
 {
     <div class="alert alert-danger">Oops... You'r not logged in.
-        Please login first, Redirecting to login page.</div>
+        Please login first, Redirecting in 4 seconds.</div>
 }
 else
 {
+    <h4>Hello, @currentUser?.Name</h4>
     @if (tasks is null)
     {
         <p>Loading tasks...</p>
     }
     else if (!tasks.Any())
     {
-        <p>No tasks found. Start by creating one!</p>
+        <div class="alert alert-info">
+            No tasks yet. <a href="/create">Create your first task</a> to get started!
+        </div>
     }
     else
     {
@@ -56,8 +67,9 @@ else
 
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">Delete</button>
+                            <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">✏️
+                                Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">🗑️ Delete</button>
                         </td>
                     </tr>
                 }
@@ -68,8 +80,9 @@ else
 
 
 @code {
-    private List<TaskItem> tasks;
+    private List<TaskItem>? tasks;
     private int loggedUserId;
+    private AppUser? currentUser = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +91,7 @@ else
         try
         {
             tasks = await TaskService.GetAllAsync(loggedUserId);
+            currentUser = await appDbContext.AppUsers.FirstOrDefaultAsync(u => u.AppUserId == loggedUserId);
         }
         catch (Exception ex)
         {
@@ -99,12 +113,22 @@ else
             return;
         }
     }
+    private void Logout()
+    {
+        UserIdService.loggedUserId = 0;
+        NavManager.NavigateTo("/");
+    }
     private async Task DeleteTask(int id)
     {
-        Console.WriteLine("Delete button");
-        await TaskService.DeleteAsync(id);
-        tasks = await TaskService.GetAllAsync(loggedUserId); // Refresh list
-        StateHasChanged();
+        // Console.WriteLine("Delete button");
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this task?");
+        if (confirmed)
+        {
+
+            await TaskService.DeleteAsync(id);
+            tasks = await TaskService.GetAllAsync(loggedUserId); // Refresh list
+            StateHasChanged();
+        }
     }
 
     private void EditTask(int id)

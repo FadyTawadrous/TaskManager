@@ -18,6 +18,8 @@ public class TaskService
 
     public async Task AddAsync(TaskItem task)
     {
+        task.Title = task.Title.Trim();
+        task.Description = task.Description.Trim();
         _context.TaskItems.Add(task);
         await _context.SaveChangesAsync();
     }

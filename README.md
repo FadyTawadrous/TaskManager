@@ -48,11 +48,12 @@ Designed for productivity, clarity, and scalability, this app empowers users to 
 2. **Set up the database**
 - Update appsettings.json with your connection string
 - Run EF Core migrations:
-  . dotnet ef migrations add InitialMigration
-  . dotnet ef database update
+  
+- dotnet ef migrations add InitialMigration
+- dotnet ef database update
 
 3. **Run the app**
-   . dotnet run
+- dotnet run
 
 ✅ Validation & Feedback
 - Form-level validation using

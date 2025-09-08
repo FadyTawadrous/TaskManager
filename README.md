@@ -55,11 +55,11 @@ Designed for productivity, clarity, and scalability, this app empowers users to 
    dotnet run
 
 ✅ Validation & Feedback
-• 	Form-level validation using 
-• 	Real-time error/success messages
-• 	Accessibility-first design
-📌 Roadmap
-• 	🔄 Task reminders & notifications
-• 	📱 Mobile-friendly layout
+- Form-level validation using
+- Real-time error/success messages
+- Accessibility-first design
 
-   git clone https://github.com/your-username/task-manager.git
+
+📌 Roadmap
+- 🔄 Task reminders & notifications
+- 📱 Mobile-friendly layout

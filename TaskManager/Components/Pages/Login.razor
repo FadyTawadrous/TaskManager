@@ -69,6 +69,7 @@
             if (user == null)
             {
                 ErrorMessage = "Invalid email or password.";
+                isSubmitting = false;
                 StateHasChanged();
                 return;
             }
@@ -85,7 +86,7 @@
         }
         finally
         {
-            isSubmitting = false;
+            //isSubmitting = false;
         }
     }
 

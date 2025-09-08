@@ -133,6 +133,16 @@
     {
         taskToEdit.Category = categories.FirstOrDefault(c => c.CategoryId == selectedCategoryId);
         taskToEdit.UpdatedAt = DateTime.Now;
+
+        if ((int)taskToEdit.TaskStatus == (int)TaskStatus.Completed)
+        {
+            taskToEdit.CompletedAt = DateTime.Now;
+        }
+        else
+        {
+            taskToEdit.CompletedAt = null;
+        }
+
         await TaskService.UpdateAsync(taskToEdit);
         SuccessMessage = "Task Updated Successfully!. Redirecting in 3 seconds";
         StateHasChanged();

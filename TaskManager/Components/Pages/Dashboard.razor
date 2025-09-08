@@ -1,5 +1,6 @@
 @page "/dashboard"
 @using Microsoft.EntityFrameworkCore
+@using TaskManager.Components.Pages
 
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
@@ -9,9 +10,15 @@
 @inject AppDbContext appDbContext
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5>📋 Task Dashboard</h5>
+    <h5>📋 Tasks Dashboard</h5>
 
     <div class="d-flex gap-2">
+        <button class="btn btn-outline-info" @onclick="GenerateReport">
+            <i class="bi bi-file-earmark-text"></i> Generate Report
+        </button>
+        <button class="btn btn-outline-info fw-bold border-2 shadow-sm" @onclick="GroupTaskByPriority">
+            <i class="bi bi-diagram-3-fill"></i> Group Tasks By Priority
+        </button>
         <button class="btn btn-success" @onclick="NavigateToCreate">
             <i class="bi bi-plus-circle"></i> Create Task
         </button>
@@ -21,11 +28,13 @@
     </div>
 </div>
 
+@* Filteration Box *@
 <div class="position-sticky top-0 bg-white z-1">
     <div class="card mb-4 p-3 shadow-sm">
         <div class="row g-3">
             <div class="col-md-2">
-                <InputText class="form-control" placeholder="🔎 Search by Title" @oninput="HandleSearchInput" @bind-Value="searchTerm" />
+                <InputText class="form-control" placeholder="🔎 Search by Title" @oninput="HandleSearchInput"
+                    @bind-Value="searchTerm" />
             </div>
 
             <div class="col-md-2">
@@ -75,6 +84,7 @@
         </div>
     </div>
 </div>
+@* End Filtration Box *@
 
 @if (loggedUserId <= 0)
 {
@@ -84,6 +94,9 @@
 else
 {
     <h4>Hello, @currentUser?.Name</h4>
+    <div class="alert alert-secondary">
+        ⏱️ Average Completion Time: <strong>@GetAverageCompletionTime()</strong>
+    </div>
     @if (tasks is null)
     {
         <p>Loading tasks...</p>
@@ -96,57 +109,123 @@ else
     }
     else
     {
-        <table class="table table-striped table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Due Date</th>
-                    <th>Is Overdue</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var mytask in FilteredTasks)
-                {
-                    <tr class="@(mytask.IsOverdue ? "table-danger" : "")">
-                        <td>@mytask.Title</td>
-                        <td>@mytask.Description</td>
-                        <td>@mytask.Category.Name</td>
-                        <td>@mytask.DueDate.ToShortDateString()</td>
-                        <td>
-                            @if (mytask.IsOverdue)
-                            {
-                                <span class="badge bg-danger" title="Due date has passed and task is not completed">Overdue</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success">On Time</span>
-                            }
-                        </td>
-                        <td>
-                            <span class="@GetStatusClass((int)mytask.TaskStatus)">
-                                @mytask.TaskStatus
-                            </span>
-                        </td>
-                        <td>
-                            <span class="@GetPriorityClass((int)mytask.PriorityLevel)">
-                                @mytask.PriorityLevel
-                            </span>
+        @if (groupByPriority)
+        {
+            @* Render grouped tables *@
+            @foreach (var group in GroupedTasksByPriority)
+            {
+                <h5 class="mt-4">
+                    <span class="@GetPriorityClass((int)group.Key)">
+                        @group.Key Priority
+                    </span>
+                </h5>
 
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">✏️
-                                Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">🗑️ Delete</button>
-                        </td>
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Due Date</th>
+                            <th>Is Overdue</th>
+                            <th>Status</th>
+                            <th>Completed At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mytask in group.Value)
+                        {
+                            <tr class="@(mytask.IsOverdue ? "table-danger" : "")">
+                                <td>@mytask.Title</td>
+                                <td>@mytask.Description</td>
+                                <td>@mytask.Category.Name</td>
+                                <td>@mytask.DueDate.ToShortDateString()</td>
+                                <td>
+                                    @if (mytask.IsOverdue)
+                                    {
+                                        <span class="badge bg-danger">Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">On Time</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="@GetStatusClass((int)mytask.TaskStatus)">
+                                        @mytask.TaskStatus
+                                    </span>
+                                </td>
+                                <td>@(mytask.CompletedAt?.ToShortDateString() ?? "Not completed")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">✏️
+                                        Edit</button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">🗑️ Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+        else
+        {
+            @* Render flat table *@
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Due Date</th>
+                        <th>Is Overdue</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Completed At</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var mytask in FilteredTasks)
+                    {
+                        <tr class="@(mytask.IsOverdue ? "table-danger" : "")">
+                            <td>@mytask.Title</td>
+                            <td>@mytask.Description</td>
+                            <td>@mytask.Category.Name</td>
+                            <td>@mytask.DueDate.ToShortDateString()</td>
+                            <td>
+                                @if (mytask.IsOverdue)
+                                {
+                                    <span class="badge bg-danger" title="Due date has passed and task is not completed">Overdue</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">On Time</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="@GetStatusClass((int)mytask.TaskStatus)">
+                                    @mytask.TaskStatus
+                                </span>
+                            </td>
+                            <td>
+                                <span class="@GetPriorityClass((int)mytask.PriorityLevel)">
+                                    @mytask.PriorityLevel
+                                </span>
+
+                            </td>
+                            <td>@(mytask.CompletedAt?.ToShortDateString() ?? "Not completed")</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary me-2" @onclick="() => EditTask(mytask.TaskItemId)">✏️
+                                    Edit</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteTask(mytask.TaskItemId)">🗑️ Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
     }
 }
 
@@ -163,6 +242,14 @@ else
     private int? selectedCategoryId;
     private string? filterOverdue = string.Empty;
     private List<Category> categories = new();
+    private List<TaskItem>? completedTasks = new();
+
+    private bool groupByPriority = false;
+
+    private void GroupTaskByPriority()
+    {
+        groupByPriority = !groupByPriority;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -193,6 +280,32 @@ else
             NavManager.NavigateTo("/");
             return;
         }
+    }
+    private string GetAverageCompletionTime()
+    {
+        if (tasks == null || tasks?.Count == 0)
+        {
+            return "N/A";
+        }
+
+        completedTasks = tasks?
+        .Where(t => t.CompletedAt.HasValue && t.CreatedAt != null)
+        .ToList();
+
+        if (completedTasks?.Count == 0 || completedTasks == null)
+        {
+            return "N/A";
+        }
+
+        TimeSpan totalDuration = TimeSpan.Zero;
+
+        foreach (var task in completedTasks)
+        {
+            totalDuration += task.CompletedAt.Value - task.CreatedAt;
+        }
+
+        var averageDuration = TimeSpan.FromTicks(totalDuration.Ticks / completedTasks.Count);
+        return $"{averageDuration.TotalDays:F1} days";
     }
     private void Logout()
     {
@@ -261,5 +374,15 @@ else
         selectedStatus = null;
         selectedCategoryId = null;
         filterOverdue = string.Empty;
+    }
+
+    private Dictionary<Dashboard.PriorityLevel, List<TaskItem>> GroupedTasksByPriority =>
+    FilteredTasks
+    .GroupBy(t => (Dashboard.PriorityLevel)t.PriorityLevel) // cast if needed
+    .OrderByDescending(g => g.Key)
+    .ToDictionary(g => g.Key, g => g.ToList());
+    private void GenerateReport()
+    {
+        NavManager.NavigateTo($"report");
     }
 }

@@ -1,0 +1,140 @@
+@page "/report"
+
+@rendermode InteractiveServer
+@inject NavigationManager NavManager
+@inject TaskService TaskService
+@inject userIdService UserIdService
+@inject AppDbContext AppDbContext
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-4">📊 Task Report</h3>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary mb-3" @onclick="NavigateToDashboard">
+            <i class="bi bi-arrow-left-circle"></i> Back to Dashboard
+        </button>
+    </div>
+</div>
+
+@if (tasks == null)
+{
+    <p>Loading report...</p>
+}
+else if (!tasks.Any())
+{
+    <div class="alert alert-info">No tasks found to generate a report.</div>
+}
+else
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white fw-bold">Summary</div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">Total Tasks: <strong>@tasks.Count</strong></li>
+                <li class="list-group-item">Completed Tasks: <strong>@completedCount</strong></li>
+                <li class="list-group-item">Overdue Tasks: <strong>@overdueCount</strong></li>
+                <li class="list-group-item">Average Completion Time: <strong>@averageCompletionTime</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <h4>📋 Task Breakdown</h4>
+    <span class="badge bg-success">
+        Completed
+    </span>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Created At</th>
+                <th>Completed At</th>
+                <th>Duration</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in tasks.Where(t => t.CompletedAt.HasValue))
+            {
+                var duration = task.CompletedAt.Value - task.CreatedAt;
+                <tr>
+                    <td>@task.Title</td>
+                    <td>@task.TaskStatus</td>
+                    <td>@task.PriorityLevel</td>
+                    <td>@task.CreatedAt.ToShortDateString()</td>
+                    <td>@task.CompletedAt?.ToShortDateString()</td>
+                    <td>@($"{duration.TotalDays:F1} days")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <span class="badge bg-secondary">
+        Not Completed
+    </span>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Created At</th>
+                <th>Due Date</th>
+                <th>Is Overdue</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in tasks.Where(t => t.CompletedAt == null))
+            {
+                <tr>
+                    <td>@task.Title</td>
+                    <td>@task.TaskStatus</td>
+                    <td>@task.PriorityLevel</td>
+                    <td>@task.CreatedAt.ToShortDateString()</td>
+                    <td>@task.DueDate.ToShortDateString()</td>
+                    <td>
+                        @if (task.IsOverdue)
+                        {
+                            <span class="badge bg-danger" title="Due date has passed and task is not completed">Overdue</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">On Time</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TaskItem>? tasks;
+    private int completedCount;
+    private int overdueCount;
+    private string averageCompletionTime = "N/A";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = UserIdService.loggedUserId;
+        tasks = await TaskService.GetAllAsync(userId);
+
+        completedCount = tasks.Count(t => t.CompletedAt.HasValue);
+        overdueCount = tasks.Count(t => t.IsOverdue);
+
+        var completedTasks = tasks.Where(t => t.CompletedAt.HasValue && t.CreatedAt != null).ToList();
+        if (completedTasks.Any())
+        {
+            var totalDuration = completedTasks
+            .Select(t => t.CompletedAt.Value - t.CreatedAt)
+            .Aggregate(TimeSpan.Zero, (sum, next) => sum + next);
+
+            var avg = TimeSpan.FromTicks(totalDuration.Ticks / completedTasks.Count);
+            averageCompletionTime = $"{avg.TotalDays:F1} days";
+        }
+    }
+    private void NavigateToDashboard()
+    {
+        NavManager.NavigateTo($"dashboard");
+    }
+}

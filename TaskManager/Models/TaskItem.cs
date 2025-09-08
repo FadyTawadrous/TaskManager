@@ -10,6 +10,7 @@ public class TaskItem
     public DateTime DueDate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
     public TaskStatus TaskStatus { get; set; } = TaskStatus.Pending;
     public PriorityLevel PriorityLevel { get; set; } = PriorityLevel.Medium;
     public bool IsOverdue => DueDate < DateTime.UtcNow && TaskStatus != TaskStatus.Completed;

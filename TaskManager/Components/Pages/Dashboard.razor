@@ -186,7 +186,7 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var mytask in FilteredTasks)
+                    @foreach (var mytask in PagedTasks)
                     {
                         <tr class="@(mytask.IsOverdue ? "table-danger" : "")">
                             <td>@mytask.Title</td>
@@ -224,8 +224,24 @@ else
                     }
                 </tbody>
             </table>
-        }
 
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                    </li>
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(i)">@i</button>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == TotalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                    </li>
+                </ul>
+            </nav>
+        }
     }
 }
 
@@ -243,6 +259,14 @@ else
     private string? filterOverdue = string.Empty;
     private List<Category> categories = new();
     private List<TaskItem>? completedTasks = new();
+    private int currentPage = 1;
+
+    // Pagination: 10 tasks per page
+    private int pageSize = 10;
+    private int TotalPages => (int)Math.Ceiling((double)(FilteredTasks.Count()) / pageSize);
+    private IEnumerable<TaskItem> PagedTasks => FilteredTasks
+    .Skip((currentPage - 1) * pageSize)
+    .Take(pageSize);
 
     private bool groupByPriority = false;
 
@@ -250,7 +274,13 @@ else
     {
         groupByPriority = !groupByPriority;
     }
-
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            currentPage = page;
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         loggedUserId = UserIdService.loggedUserId;
@@ -327,7 +357,6 @@ else
             StateHasChanged();
         }
     }
-
     private void EditTask(int id)
     {
         NavManager.NavigateTo($"/edit/{id}");
@@ -356,6 +385,7 @@ else
     private void HandleSearchInput(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? "";
+        currentPage = 1;
     }
 
     private IEnumerable<TaskItem> FilteredTasks => tasks?
@@ -374,6 +404,7 @@ else
         selectedStatus = null;
         selectedCategoryId = null;
         filterOverdue = string.Empty;
+        currentPage = 1;
     }
 
     private Dictionary<Dashboard.PriorityLevel, List<TaskItem>> GroupedTasksByPriority =>
